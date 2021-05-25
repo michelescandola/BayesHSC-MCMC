@@ -28,6 +28,31 @@ library(bayesplot)
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+## Introduction 1/
+
+* Bayesian Statistics predates NHST statistics about 150 years
+  * Why we stopped using it?
+  
+* $P(\Theta_i|D) \propto P(D|\Theta_i) \times P(\Theta_i)$
+  * $D = \{ X^{(1)}, \dots,X^{(n)} \}$
+  * $P(D|\Theta_i) = \mathcal{L}_n(\theta|X^{(1)}, \dots,X^{(n)}) = \prod^n_{i=1}p_\theta(X^{(i)})$
+  * $P(\Theta_i|D) \propto P(\Theta_i) \int_{\Theta_i} \mathcal{L}_n(\theta|D) dQ_i(\theta)$
+  * The computation of the _Marginal Likelihood Integral_ is difficult.
+  * Too difficult for complex models.
+    
+## Introduction 2/
+
+* Why we started again?
+  * Because Markov Chain Monte Carlo sampling methods can avoid
+    us to compute the integrals.
+  * Markov Chain Monte Carlo draws samples from the posterior distribution.
+  
+* If the samples 
+
+
+
+
+
 ## Monte Carlo Markov Chains 1/3
 
 - Algoritmo di campionamento casuale da una distribuzione (Monte Carlo)
