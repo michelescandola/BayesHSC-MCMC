@@ -6,7 +6,6 @@ font-family: 'Serif'
 output:
   slidy_presentation: 
     incremental: yes
-    logo: logo.jpeg
     footer: "M. Scandola - $2^{nd}$ BayesHSC Summer School 2021 - https://michelescandola.shinyapps.io/2021_-_sipf_webinar_bayesian/"
 css: mystyle.css
 bibliography: biblio.bib
@@ -20,6 +19,7 @@ runtime: shiny
 # 
 # Licenza afl-3.0
 
+library(ggplot2)
 library(fontawesome)
 library(knitr)
 library(DT)
@@ -28,7 +28,125 @@ library(bayesplot)
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Introduction 1/
+## Once upon a time... King Markov and Captain Metropolis 1/3
+
+<center>
+![](drunkking.jpg)
+</center>
+
+King Markov is king of a chain of 5 islands.
+
+* Rather than live in a palace, he lives in a royal boat.
+* Each night the royal boat anchors in the harbor of one of the islands.
+* The law declares that the king must harbor at each island in
+  proportion to the population of the island.
+  
+## Once upon a time... King Markov and Captain Metropolis 2/3
+
+<center>
+![](island.jpg)
+</center>
+
+Everyone else could find a perfectly reasonable way to visit each island,
+but King Markov does not:
+
+1. want to keep recording of the population of each island
+2. he doesn't want to know each night where he will be the next night
+
+## Once upon a time... King Markov and Captain Metropolis 3/3
+
+<center>
+<img src="coin.jpg" alt="drawing" width="300"/>
+</center>
+
+Metropolis, the captain of the boat, in order to choose the next island
+
+1. Each morning, have breakfast with the island clerk and inquire
+   about the population of the current island.
+2. He randomly choose a different island, and he travels there for lunch
+3. Over lunch at the proposal island, inquire about its population.
+  * If the proposal island has more people, stay at the proposal island for the
+    night.
+  * If the proposal island has fewer people,
+    he flips a coin, and if it is "tail" they stay, if it is "head" they move
+    to the last island
+    
+```{r}
+dat0 <- c(1:5, 2:5, 3:5, 4:5, 5)
+dat0 <- c( dat0, dat0, dat0 , dat0, dat0, dat0 , dat0, dat0, dat0 )
+```
+
+    
+## Once upon a time... King Markov and Captain Metropolis
+
+```{r}
+sidebarPanel(
+  sliderInput("N", label = "Number of King Markov's travels:",
+                min = 10, max = 1350, value = 10, step = 10),
+  width = 15
+)
+
+renderPlot({
+  old.par <- par()
+  
+  f <- function(x) { return( x ) }
+  
+  n <- as.numeric(input$N)
+  
+  myMCMC_step <- function(old_point, density_function, datt){
+      new_point <- sample( datt )[1]
+      
+      ## Acceptance probability:
+      alpha <- min(1, density_function(new_point) / density_function(old_point))
+      
+      ## Accept new point with probability alpha:
+      if (alpha > 1){ # the population of the new island is bigger
+        return( new_point )
+      } else {
+        if( rbinom(n = 1, size = 1, prob = 0.5) == 0 ){ ## tails
+          return( old_point )
+        } else { ## heads
+          return( new_point )
+        }
+      }
+  }
+  
+  set.seed( 5 )
+  
+  x1 <- 1
+  
+  for(i in 2:5000){
+    x1 <- c( x1, myMCMC_step(x1[i-1] , f, dat0 ) )
+  }
+
+  visits <- table( x1[1:n] )
+  
+  par(mfrow=c(1,2))
+  plot(x = 1:n, y = x1[1:n] , type = "p",
+       xlim = c(1, n), ylim = c(min(x1), max(x1)),
+       main = paste("King Markov's travel until the", n, "day"),
+       xlab = "Day",
+       ylab = "Islands")
+  plot( data.frame(
+    x = 1:5,
+    y = c(90 ,180, 270, 360, 450)
+  )  ,lwd = 4, col = "red", ylim = c(0, 500),
+  xlim = c(1,5),
+  xlab = "Islands")
+  points(visits)
+  # points(x = density(x1[1:n])$x, y = density(x1[1:n])$y*100,
+  #      type = "l")
+  legend("topleft",
+         lty = c(1,1),
+         col = c("black", "red"),
+         legend =c("Number of King's visits", "Islands' population")
+         )
+  
+  par(old.par)
+})
+```
+
+## Introduction 1/3
 
 * Bayesian Statistics predates NHST statistics about 150 years
   * Why we stopped using it?
@@ -40,16 +158,59 @@ knitr::opts_chunk$set(echo = FALSE)
   * The computation of the _Marginal Likelihood Integral_ is difficult.
   * Too difficult for complex models.
     
-## Introduction 2/
+## Introduction 2/3
 
 * Why we started again?
   * Because Markov Chain Monte Carlo sampling methods can avoid
     us to compute the integrals.
   * Markov Chain Monte Carlo draws samples from the posterior distribution.
+
+A MCMC can be defined as a
+
+> "technique for estimating by simulation the
+   expectation of a statistic in a complex model" [@gilks2005]
   
-* If the samples 
+* Assuming independency of the draws:
+  * $E[p(\theta|y)]\sim \frac{1}{T} \sum^T_{t=1} p(\theta_t|y)$
+  
+* However, in Bayesian Statistics samples do not need to be drawn independently
+  [@kaplan2014bayesian]
+  
+## Introduction 3/3
+
+MCMC draws values of $\theta$ from approximate distributions, and correct them
+to better approximate the target posterior distribution $P(\Theta|D)$ [@gelman2013bayesian].
+
+* The basic idea of a MCMC is:
+
+1. it draws a sample ($\theta_t$) from the posterior distribution ($P(\Theta|D)$).
+2. the new sample is tested against the previous one ($\theta_{t-1}$).
+3. Generally speaking, if the probability of the new sample $\theta_t$ is
+   greater than the old sample $\theta_{t-1}$, the new sample is accepted.
+4. If it is not, in order to avoid *local minima (or maxima)*, an additional
+  rule is applied to see if the new sample is accepted or not.
+  
 
 
+## Monte Carlo methods
+
+* They are non-parametrical statistical tests,
+  for the first time used by Enrico Fermi in
+  1930 [@Metropolis1987]
+* There are a lot of different approaches, but
+  usually the general schema is the following.
+  1. Define a domain of possible inputs.
+  2. Randomly generate the data from a Probability Density Function.
+  3. Apply an algorithm to the data.
+  4. Aggregate the results.
+
+
+## Markov Chains
+
+* A Markov Chain is a random process, namely a function that creates random variables.
+* It undergoes transitions from one state to another within
+  a limited range of possible states.
+* It is _memorless_: the next state only depends from the current one.
 
 
 
