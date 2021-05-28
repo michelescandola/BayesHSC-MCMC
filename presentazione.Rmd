@@ -4,7 +4,7 @@ author: "Michele Scandola"
 date: "$2^{nd}$ BayesHSC Summer School 2021"
 font-family: 'Serif'
 output:
-  slidy_presentation: 
+  slidy_presentation:
     incremental: yes
     footer: "M. Scandola - $2^{nd}$ BayesHSC Summer School 2021 - https://michelescandola.shinyapps.io/2021_-_sipf_webinar_bayesian/"
 css: mystyle.css
@@ -19,12 +19,10 @@ runtime: shiny
 # 
 # Licenza afl-3.0
 
-library(ggplot2)
-library(fontawesome)
 library(knitr)
-library(DT)
-library(HDInterval)
-library(bayesplot)
+library(ggplot2)
+library(MASS)
+
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
@@ -70,18 +68,13 @@ Metropolis, the captain of the boat, in order to choose the next island
   * If the proposal island has fewer people,
     he flips a coin, and if it is "tail" they stay, if it is "head" they move
     to the last island
-    
-```{r}
-dat0 <- c(1:5, 2:5, 3:5, 4:5, 5)
-dat0 <- c( dat0, dat0, dat0 , dat0, dat0, dat0 , dat0, dat0, dat0 )
-```
 
     
 ## Once upon a time... King Markov and Captain Metropolis
 
 ```{r}
 sidebarPanel(
-  sliderInput("N", label = "Number of King Markov's travels:",
+  sliderInput("N0", label = "Number of King Markov's travels:",
                 min = 10, max = 1350, value = 10, step = 10),
   width = 15
 )
@@ -89,9 +82,12 @@ sidebarPanel(
 renderPlot({
   old.par <- par()
   
+  dat0 <- c(1:5, 2:5, 3:5, 4:5, 5)
+  dat0 <- c( dat0, dat0, dat0 , dat0, dat0, dat0 , dat0, dat0, dat0 )
+  
   f <- function(x) { return( x ) }
   
-  n <- as.numeric(input$N)
+  n0 <- as.numeric(input$N0)
   
   myMCMC_step <- function(old_point, density_function, datt){
       new_point <- sample( datt )[1]
@@ -119,12 +115,12 @@ renderPlot({
     x1 <- c( x1, myMCMC_step(x1[i-1] , f, dat0 ) )
   }
 
-  visits <- table( x1[1:n] )
+  visits <- table( x1[1:n0] )
   
   par(mfrow=c(1,2))
-  plot(x = 1:n, y = x1[1:n] , type = "p",
-       xlim = c(1, n), ylim = c(min(x1), max(x1)),
-       main = paste("King Markov's travel until the", n, "day"),
+  plot(x = 1:n0, y = x1[1:n0] , type = "p",
+       xlim = c(1, n0), ylim = c(min(x1), max(x1)),
+       main = paste("King Markov's travel until the", n0, "day"),
        xlab = "Day",
        ylab = "Islands")
   plot( data.frame(
@@ -148,6 +144,7 @@ renderPlot({
 
 ## Introduction 1/3
 
+
 * Bayesian Statistics predates NHST statistics about 150 years
   * Why we stopped using it?
   
@@ -161,25 +158,28 @@ renderPlot({
 ## Introduction 2/3
 
 * Why we started again?
-  * Because Markov Chain Monte Carlo sampling methods can avoid
-    us to compute the integrals.
-  * Markov Chain Monte Carlo draws samples from the posterior distribution.
+  * Approximate methods of inference (normal and Laplace approximations,
+    quadrature approximations).
+  * Stochastic simulation methods (Monte Carlo integration,
+    resampling techniques, **Markov Chain Monte Carlo - MCMC**).
 
 A MCMC can be defined as a
 
-> "technique for estimating by simulation the
-   expectation of a statistic in a complex model" [@gilks2005]
+> stochastic process where the present state [is dependent from the
+  previous state][^1], but past and future states are independent [@Gamerman2006]
   
 * Assuming independency of the draws:
-  * $E[p(\theta|y)]\sim \frac{1}{T} \sum^T_{t=1} p(\theta_t|y)$
+  * $E[p(\theta|y)]\approx \frac{1}{T} \sum^T_{t=1} p(\theta_t|y)$
   
 * However, in Bayesian Statistics samples do not need to be drawn independently
   [@kaplan2014bayesian]
   
+[^1]: Author's presentation addition
+  
 ## Introduction 3/3
 
-MCMC draws values of $\theta$ from approximate distributions, and correct them
-to better approximate the target posterior distribution $P(\Theta|D)$ [@gelman2013bayesian].
+> MCMC draws values of $\theta$ from approximate distributions, and correct them
+  to better approximate the target posterior distribution $P(\Theta|D)$ [@gelman2013bayesian].
 
 * The basic idea of a MCMC is:
 
@@ -213,36 +213,203 @@ to better approximate the target posterior distribution $P(\Theta|D)$ [@gelman20
 * It is _memorless_: the next state only depends from the current one.
 
 
+## Stationary distribution of a MCMC
 
-## Monte Carlo Markov Chains 1/3
+Each $\theta_t$ is only dependent to $\theta_{t-1}$
 
-- Algoritmo di campionamento casuale da una distribuzione (Monte Carlo)
-- Ogni nuovo campionamento è dipendente dal campionamento precedente (Markov Chain)
+Over a long sequence:
+
+* The chain will "forget" its
+  initial state $\theta_{t = 0}$
+* The chain will converge to its _stationary distribution_ $P(\Theta|D)$
+* The number of iterations necessary to reach the _stationary distribution_
+  are known as _burn-in_ iterations
+* $\overline{P}(\theta|D) = \frac{1}{T-m}\sum^T_{t=m+1}p(\theta_i|y)$
+  * with $T$ = total number of iterations,
+  * $m$ = total number of _burn-in_ iterations,
+  * $p(\theta_i|y)$ the posterior distribution sampled at the $i^{th}$ iteration
+  
+## The most used typologies of MCMCs
+
+1. Metropolis-Hasting algorithm
+2. Gibbs' Sampling
+3. Hamiltonian Markov Chains
+
+## Metropolis-Hastings algorithm
+
+1. a _candidate_ value $x$ is sampled from a so-called _proposal_ distribution
+  ($q(\cdot|y_t)$)
+2. the algorithm _accepts_ the candidate value with probability
+  $p(y,x) = \min\Big\{1,\frac{p(x)q(y|x)}{p(y)q(x|y)}\Big\}$
+  * $y$ is the current value of the distribution ($y_t$), while $x$ is the
+    proposal for the next step of the MCMC, it is the "wannabe" $y_{t+1}$
+  * If the probability of $x$ ($p(x)q(y|x)$) is greater than the probability of
+    $y$ ($p(y)q(x|y)$),
+    we will accept $x$ as the next step of the chain with probability = 1
+  * Otherwise, we will accept $x$ as the new step of the chain with a
+    probability that comes from the ratio of
+    the probabilities
+    
+## Metropolis-Hastings algorithm example 1/6
 
 ```{r}
-f <- function(x)
-  0.3 * dnorm(x, mean = 90, sd = 20) +
-  0.1 * dnorm(x, mean = 65, sd = 20) +
-  0.4 * dnorm(x, mean = 30, sd = 10) +
-  0.2 * dnorm(x, mean = 150, sd = 10) 
+rm( list = ls() )
 
-dat <- c(rnorm(300, mean = 90, sd = 20),
-         rnorm(100, mean = 65, sd = 20),
-         rnorm(400, mean = 30, sd = 10),
-         rnorm(200, mean = 150, sd = 10))
+set.seed(5)
+y <- rnorm(100, mean = 10, sd = 30) + rgamma(100, shape = 1, rate = 0.1)
+x <- y * 0.3  + rnorm( 100 , sd = 5)
 
-curve(f(x), col="red", -4, 200, n=301, las=1)
+dat2D <- data.frame(x,y)
+
+dens <- kde2d(dat2D$x, dat2D$y)
+
+contour(dens)
+points(x, y, col = "lightgrey")
+
+dens2 <- kde2d(dat2D$x, dat2D$y, n = 100)
+
+densfunc <- function(x, y, dens2 = dens2){
+  
+  sx <- which.min( abs(x - dens2$x) )
+  sy <- which.min( abs(y - dens2$y) )
+  
+  return( dens2$z[sx,sy] )
+}
+
 ```
 
-## Monte Carlo Markov Chains 2/3
+## Metropolis-Hastings algorithm example 2/6
 
 ```{r}
-sidebarPanel(
-  sliderInput("N", label = "Numero di iterazioni della MCMC:",
-                min = 100, max = 5000, value = 100, step = 100),
-  width = 15
-)
+N <- 20000
+NN <- NNN <- 10000
 
+xn <- rep(0,N)
+yn <- rep(0,N)
+
+## arbitrary starting
+xn[1] <- -10  
+yn[1] <- -10
+
+set.seed( 5 )
+
+for(i in 2:N){
+  currentx <- xn[i-1]
+  currenty <- yn[i-1]
+  
+  prop <- mvrnorm(n = 1, c(currentx, currenty), .4*diag(2))
+  
+  proposedx <- prop[1]
+  proposedy <- prop[2]
+  
+  denominator <- densfunc( currentx, currenty, dens2 )
+  numerator   <- densfunc( proposedx, proposedy, dens2 )
+  
+  A <-  min( numerator / denominator, 1 )
+  
+  pz <- runif(1)
+  
+  if( pz < A ){
+    xn[i] = proposedx       # accept move with probabily min(1,A)
+    yn[i] = proposedy       # accept move with probabily min(1,A)
+  } else {
+    xn[i] = currentx        # otherwise "reject" move, and stay where we are
+    yn[i] = currenty        # otherwise "reject" move, and stay where we are
+  }
+}
+
+contour(dens)
+points(x, y, col = "lightgrey")
+points(xn[1:N], yn[1:N], col = "red", pch = ".")
+points(xn[(N-1000):N], yn[(N-1000):N], col = "blue", type = "l")
+```
+
+## Metropolis-Hastings algorithm example 3/6
+
+
+```{r}
+renderPlot({
+  old.par <- par()
+  
+  set.seed(5)
+  y <- rnorm(100, mean = 10, sd = 30) + rgamma(100, shape = 1, rate = 0.1)
+  x <- y * 0.3  + rnorm( 100 , sd = 5)
+  
+  dat2D <- data.frame(x,y)
+  
+  dens <- kde2d(dat2D$x, dat2D$y)
+  
+  contour(dens)
+  points(x, y, col = "lightgrey")
+  
+  dens2 <- kde2d(dat2D$x, dat2D$y, n = 100)
+  
+  densfunc <- function(x, y, dens2 = dens2){
+    
+    sx <- which.min( abs(x - dens2$x) )
+    sy <- which.min( abs(y - dens2$y) )
+    
+    return( dens2$z[sx,sy] )
+  }
+  
+  n <- as.numeric(input$N)
+  
+  myMCMC_step <- function(old_point, density_function){
+    currentx <- old_point[1]
+    currenty <- old_point[2]
+    
+    prop <- mvrnorm(n = 1, c(currentx, currenty), .4*diag(2))
+    
+    proposedx <- prop[1]
+    proposedy <- prop[2]
+    
+    denominator <- density_function( currentx, currenty, dens2 )
+    numerator   <- density_function( proposedx, proposedy, dens2 )
+    
+    A <-  min( numerator / denominator, 1 )
+    
+    pz <- runif(1)
+    
+    if( pz < A ){ # accept
+      return( c( proposedx , proposedy ) )
+    } else { # reject
+      return( c( currentx , currenty ) )
+    }
+  }
+  
+  set.seed( 5 )
+  
+  N <- 20000
+
+  xn <- matrix(ncol = 2, nrow = N)
+  
+  ## arbitrary starting
+  xn[1,] <- c( -10, -10 )  
+  
+  for(i in 2:N){
+    xn[i,] <- myMCMC_step(xn[i-1, ] , densfunc )
+  }
+  
+  contour(dens, main = paste(n, "iterations"))
+  points(x, y, col = "lightgrey")
+  points(xn[1:n, 1], xn[1:n, 2], col = "red", pch = ".")
+  points(xn[(n-500):n, 1], xn[(n-500):n, 2], col = "blue", type = "l")
+  
+},
+height = 600)
+
+sidebarPanel(
+  sliderInput("N", label = "Number of MCMC's iterations:",
+                min = 500, max = N, value = 500, step = 100),
+  width = 15, height = 100
+)
+```  
+
+
+## Metropolis-Hastings algorithm example 4/6
+
+
+```{r}
 renderPlot({
   old.par <- par()
   
@@ -257,7 +424,7 @@ renderPlot({
            rnorm(400, mean = 30, sd = 10),
            rnorm(200, mean = 150, sd = 10))
   
-  n <- as.numeric(input$N)
+  n <- as.numeric(input$N1)
   
   myMCMC_step <- function(old_point, density_function){
       new_point <- rnorm(1, mean = old_point, sd = 50)
@@ -284,7 +451,7 @@ renderPlot({
   par(mfrow=c(1,2))
   plot(x = 1:n, y = x1[1:n] , type = "l",
        xlim = c(1, n), ylim = c(min(x1), max(x1)),
-       main = paste("Traceplot", n, "iterazioni"))
+       main = paste("Traceplot", n, "iterations"))
   plot(density(x1[1:n]), main = "Sampling distribution",
        ylim = c(0,0.015), xlim = c(-4,200))
   points(density(dat), type = "l", lwd = 4, col = "red")
@@ -292,25 +459,261 @@ renderPlot({
   legend("topright",
          lty = c(1,1),
          col = c("black", "red"),
-         legend =c("Dist. da MCMC", "Dist. originale")
+         legend =c("MCMC dsitribution", "Original distribution")
          )
   
   par(old.par)
-})
+},
+height = 600)
+
+sidebarPanel(
+  sliderInput("N1", label = "Number of MCMC's iterations:",
+                min = 100, max = 5000, value = 100, step = 100),
+  width = 15, height = 100
+)
+```   
+
+## Metropolis-Hastings algorithm example 5/6
+
+Our posterior distribution to be sampled is the following:
+
+$y \sim \mathcal{N}(\mu, \sigma)$
+
+Where:
+
+$(\mu|D) \sim \mathcal{N}(\overline{y}, 10)$
+$(\sigma|D) \sim \Gamma \Big(\frac{n}{2}, \frac{2}{(n-1)s^2}\Big)$
+
+with:
+
+$s^2 = 6$ being the variance of the data
+$\overline{y} = 15$ being the mean of the data
+and we observed 30 data points
+
+## Metropolis-Hastings algorithm example 6/6
+
+```
+ybar <- 15
+s2   <- 6
+tot  <- 30
 ```
 
-## Monte Carlo Markov Chains 3/3
+```{r}
 
-Elementi da considerare delle MCMC per capire la qualità del campionamento:
+renderPlot({
+  old.par <- par()
+  
+  ybar <- 15
+  s2 <- 6
+  tot <- 30
+  NN <- 10000
+  
+  n <- 1000 + as.numeric(input$N2)
+  
+  myMCMC_step <- function(old_mu, old_sigma, ybar, s2, tot ){
+    
+    currentx <- as.numeric( old_mu )
+    currenty <- as.numeric( old_sigma )
+    
+    proposedx <- rnorm(n = 1, mean = ybar, sd = sqrt(10))  
+    proposedy <- rgamma(n = 1, shape = tot / 2,
+                        scale = 2 / ((tot - 1) * s2))
+    
+    outx <- NA
+    outy <- NA
+    
+    denominatorx <- dnorm(currentx,  mean = ybar, sd = sqrt(10)) 
+    numeratorx   <- dnorm(proposedx, mean = ybar, sd = sqrt(10)) 
+    
+    Ax <-  min( numeratorx / denominatorx, 1 )
+    
+    pz <- runif(1)
+    
+    if( pz < Ax ){ # accept
+      outx <- proposedx
+    } else { # reject
+      outx <- currentx
+    }
+    
+    denominatory <- dgamma(currenty,  shape = tot / 2,
+                        scale = 2 / ((tot - 1) * s2)) 
+    numeratory   <- dgamma(proposedy, shape = tot / 2,
+                        scale = 2 / ((tot - 1) * s2)) 
+    
+    Ay <-  min( numeratory / denominatory, 1 )
+    
+    pz <- runif(1)
+    
+    if( pz < Ay ){ # accept
+      outy <- proposedy
+    } else { # reject
+      outy <- currenty
+    }
+    
+    
+    
+    return(data.frame( mu = outx,
+                       sigma = outy))
+  }
+  
+  set.seed( 5 )
 
-- Burn-in iterations
-- (optional) Adaptation iterations
-- Numero di catene
-- Numero di iterazioni "valide"
-  (Tot iterations - Burn-in iterations) $\times$ Numero di catene
-- Effective Sample Size (ESS o n_eff) $\leftarrow$ su questo torneremo dopo
-- Diagnostica di Gelman-Rubin o $\hat{R}$ (`Rhat`) $\leftarrow$ su
-  questo torneremo dopo
-- Posterior predicitve checking, o posterior predictive p-value $\leftarrow$ su
-  questo torneremo dopo
-- ... 
+  xn <- list()
+  
+  ## arbitrary starting
+  xn[[1]] <- data.frame( mu = -10, sigma = 10  )  
+  
+  for(i in 2:(NN+1000)){
+    xn[[i]] <- myMCMC_step(old_mu = xn[[i-1]][1],
+                           old_sigma = xn[[i-1]][2] ,
+                           ybar = ybar,
+                           s2 = s2,
+                           tot = tot)
+    
+    if(is.nan(xn[[i-1]][2,1])) break;
+  }
+  
+  xn <- do.call("rbind", xn)
+  
+  # contour(dens, main = paste(n, "iterations"))
+  # points(x, y, col = "lightgrey")
+  plot(xn[1000:n, 1], xn[1000:n, 2], col = "red",
+       ylim = c(0,0.3),
+       xlim = c(5, 25),
+       ylab = "sigma",
+       xlab = "mu")
+  points(xn[(n-100):n, 1], xn[(n-100):n, 2], col = "blue", type = "l")
+  
+}, height = 600)
+
+sidebarPanel(
+  sliderInput("N2", label = "Number of MCMC's iterations:",
+                min = 1000, max = NN, value = 1000, step = 100),
+  width = 15, height = 100
+)
+```  
+  
+
+## Gibbs' sampling
+
+1. our goal is to obtain the _joint_ posterior distributions of two or more
+  parameters of a model ($P(\theta_1, \theta_2, \dots, \theta_n | D)$).
+2. the algorithm starts with an initial set of parameters
+  $\theta^{t=0} = \{ \theta_1^{t=0}, \theta_2^{t=0}, \dots, \theta_n^{t=0} \}$
+3. then, it generates $\theta^t$ from $\theta^{t-1}$, and each parameter
+  will be dependent from the states of the other parameters sequentially.
+  *   The first parameter $\theta^t_1$ will be dependent from the states of
+      $\{\theta_2^{t-1}, \theta_3^{t-1}, \dots, \theta_n^{t-1}\}$
+  *   The second parameter $\theta^t_2$ will be dependent from the states of
+      $\{\theta_1^{t}, \theta_3^{t-1}, \dots, \theta_n^{t-1}\}$
+  *   The third parameter $\theta^t_3$ will be dependent from the states of
+      $\{\theta_1^{t}, \theta_2^{t}, \dots, \theta_n^{t-1}\}$
+  * ...
+  
+  
+## Gibbs' sampling Example 1/3
+
+We want to estimate the joint posterior distribution for
+$\mathcal{N}(\mu,\sigma)$.
+
+| t for $\mu$ | t for $\sigma$ | $\mu$                                    | $\sigma$                                    |
+|-------------|----------------|------------------------------------------|---------------------------------------------|
+| 0           | 0              | 0                                        | 1                                           |
+| 1           | 0              | $\mu^{t=1} \sim p(\mu\|\sigma^{t=0}$ = 5 | 1                                           |
+| 1           | 1              | 5                                        | $\sigma^{t=1} \sim p(\sigma\|\mu^{t=1}$ = 2 |
+| 2           | 1              | $\mu^{t=2} \sim p(\mu\|\sigma^{t=1}$ = 7 | 2                                           |
+| 2           | 2              | 7                                        | $\sigma^{t=2} \sim p(\sigma\|\mu^{t=2}$ = 4 |
+| ...         | ...            | ...                                      | ...                                         |
+
+## Gibbs' sampling Example 2/3
+
+Our posterior distribution to be sampled is the following:
+
+$y \sim \mathcal{N}(\mu, \sigma)$
+
+Where:
+
+$(\mu|\sigma, D) \sim \mathcal{N}(\overline{y}, n \cdot \sigma)$
+$(\sigma|\mu, D) \sim \Gamma \Big(\frac{n}{2}, \frac{2}{(n-1)s^2+n(\mu-\overline{y})^2} \Big)$
+
+with:
+
+$s^2 = 6$ being the variance of the data
+$\overline{y} = 15$ being the mean of the data
+and we observed 30 data points
+
+
+## Gibbs' sampling Example 3/3
+
+```
+ybar <- 15
+s2   <- 6
+tot  <- 30
+```
+
+```{r}
+
+renderPlot({
+  old.par <- par()
+  
+  ybar <- 15
+  s2 <- 6
+  tot <- 30
+  NNN <- 10000
+  
+  n <- 1000 + as.numeric(input$N5)
+  
+  myMCMC_step <- function(old_mu, old_sigma, ybar, s2, tot ){
+    
+    currentx <- old_mu
+    currenty <- old_sigma
+    
+    proposedx <- rnorm(n = 1, mean = ybar, sd = sqrt((tot * currenty)))  
+    proposedy <- rgamma(n = 1, shape = tot / 2,
+                        scale = 2 / ((tot - 1) * s2 + tot *
+                                       (proposedx - ybar)^2))
+    
+    return(data.frame( mu = c(proposedx, proposedx),
+                       sigma = c( currenty, proposedy)))
+  }
+  
+  set.seed( 5 )
+
+  xn <- list()
+  
+  ## arbitrary starting
+  xn[[1]] <- data.frame( mu = c(-10, -10), sigma = c(10, 10 ) )  
+  
+  for(i in 2:(NNN+ 1000)){
+    xn[[i]] <- myMCMC_step(xn[[i-1]][2,1],
+                           xn[[i-1]][2,2] ,
+                           ybar = ybar,
+                           s2 = s2,
+                           tot = tot)
+    
+    if(is.nan(xn[[i-1]][2,1])) break;
+  }
+  
+  xn <- do.call("rbind", xn)
+  
+  # contour(dens, main = paste(n, "iterations"))
+  # points(x, y, col = "lightgrey")
+  plot(xn[1000:n, 1], xn[1000:n, 2], col = "red",
+       ylim = c(0,0.3),
+       xlim = c(5, 25),
+       ylab = "sigma",
+       xlab = "mu")
+  points(xn[(n-500):n, 1], xn[(n-500):n, 2], col = "blue", type = "l")
+  
+0},
+height = 600)
+
+sidebarPanel(
+  sliderInput("N5", label = "Number of MCMC's iterations:",
+                min = 1000, max = NNN, value = 1000, step = 100),
+  width = 15, height = 100
+)
+```  
+
+
+## References and footnotes
