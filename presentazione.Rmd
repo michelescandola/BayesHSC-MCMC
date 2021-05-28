@@ -805,7 +805,7 @@ Each one of the $m$ chains is composed by $n$ iterative draws of the $\theta$ pa
 
 * $\hat{R} = \sqrt{\frac{\frac{n-1}{n}W + \frac{1}{n}B}{W}}$
 
-* When $\hat{R} \leq 1.1$ we consider the chains as convergent
+* When $\hat{R} \leq 1.1$ we consider the chains as not divergent [@gelman2013bayesian, p. 288]
 
 
 ```{r, fig.width=4, fig.height=3}
@@ -816,15 +816,33 @@ color_scheme_set("viridis")
 mcmc_trace(x, regex_pars = "alpha")
 ```
 
+## Effective Sample Size (ESS) or Effective number of simulation draws ($\hat{n}_{eff}$)
+
+**It has nothing to do with the Sample Size of a study**
+
+- It is the estimation of the number of independent MCMC iterations
+- It is extremely important if your statistics will rely on
+  posterior distribution intervals [@Kruschke2014]
+- $\hat{n}_{eff} = \frac{m\cdot n}{1+2\sum^T_{t=1}\hat{\rho}_t}$, with
+  $\hat{\rho}_t$ being the autocorrelation estimate and $t$ its lag
+- For [@gelman2013bayesian] $\hat{n}_{eff} \geq 10$, for [@Kruschke2014]
+  $\hat{n}_{eff} \geq 10000$
+
 ## Posterior Predictive Checking 
 
-Un altro aspetto di estrema importanza è: ma la mia distribuzione a posteriori
-rappresenta i dati?
+Another extremely important test is the Posterior Predictive Checking, 
+that helps us in understanding whether our model is really plausible given
+our data.
 
-- Per questo si utilizzano i Posterior Predictive Checking.
+* Posterior Predictive p-value (ppp): a comparison between the observed and the
+  data simulated from the MCMCs
+* $ppp = \frac{1}{S}\sum^S_{s=1}\big (T(y^{sim}_s,\theta_s) \geq T(y,\theta_s) \big )$,
+  where $T$ is a test, $y$ are the observed data, and $y^{sim}$ are the
+  simulated observations
+* If the model represents the data, $ppp \approx 0.5$ [@Gelman2013]
+  (the error of the estimated $y^{sim}$ compared to $y$ has mean = 0)
 
-- Si tratta di campionare dal modello Bayesiano ottenuto nuovi valori, che 
-  vengono confrontati graficamente o statisticamente con i dati osservati.
+* The Posterior Predictive Checking can also be done using a graphical approach
   
 ```{r, fig.width=4, fig.height=3}
 color_scheme_set("brightblue")
@@ -833,31 +851,49 @@ yrep <- example_yrep_draws()
 ppc_dens_overlay(y, yrep[1:25, ])
 ```
 
-- Posterior Predictive P-value [@Gelman2013] $ppp \sim 0.5$
+## Pareto Smoothed Importance Sampling (PSIS)
 
-## Effective Sample Size (ESS)
+> Importance Sampling is a method used to compute estimations drawing a random
+sample from a distribution that is an easier approximation of
+the target distribution [@gelman2013bayesian; @vehtari2021pareto]
 
-**Non centra nulla con il sample size dello studio**
+* it computes _importance ratios_ or _weights_ ($\omega(\theta^S)$), that are
+  an index of the
+  importance of the MCMC iterations
+* when there are differences within the $\omega(\theta^S)$, their
+  distribution, along a Pareto distribution, will have the shape $k$ parameter
+  greater than $0.7$ [@vehtari2021pareto]
 
-- E' il numero di iterazioni indipendenti da autocorrelazione nelle MCMC
-- Importantissimo per l'approccio _a là_ [@Kruschke2014]
-- [@Kruschke2014] indica ESS $\geq 10000$
-- Su alcuni software è chiamato `n_eff`
+## Leaving-One-Out Cross-Validation and PSIS
 
-## Pareto-k-diagnostic
+By using the Leaving-one-out technique, we might estimate the
+$k$ value from the model, removing one observation each time.
 
-E' un indice complesso, indica se il teorema del limite centrale tiene nella
-distribuzioni a posteriori.
+1. if $k < 0.5$ everything is OK
+2. if $0.5 \leq k < 0.7$ we should be cautious
+3. if $k > 0.7$ the importance sampling shows some problems
+4. if $ k > 1$ yhere are several observations which are highly influential,
+  which indicates potential model misspecification
 
-- Se $k < 0.5$, tutto ok
-- Se $0.5 \leq k < 0.7$ qualche problema c'è, ma tutto sommato tiene
-- Altrimenti possono esserci problemi.
+* by means of the `loo` package, we will have the percentage of times where
+  we obtain these scores
+  
+* This methodology can also be used to chose the model that better
+  _predicts_ the observed data
+  
+## Widely Applicable Information Criterion
 
-## Sensitivity analysis
+- Calculated from the posterior
+- Point-wise
+- No posterior MV gaussian distribution is assumed
+- Let lppd be the log-pointwise-predictive density
+- Let $p_{WAIC}$ be the effective number of parameters
+- let $V(y_i)$ be the variance in log-likelihood of $y_i$ for each sample from the posterior distribution
 
-Soprattutto nel caso dell'uso di Bayes Factor.
+* $WAIC = -2(lppd - p_{WAIC})$
 
-- Richiesta di provare con priori diversi, solitamente con varianza più
-  ampia, per vedere se il risultato qualitativamente regge.
+* lppd =$\sum^N_{i = 1} log Pr(y_i)$
+
+* $p_{WAIC} = \sum^N_{i = 1} log V(y_i)$
 
 ## References and footnotes
