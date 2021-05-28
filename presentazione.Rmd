@@ -22,9 +22,12 @@ runtime: shiny
 library(knitr)
 library(ggplot2)
 library(MASS)
+library(bayesplot)
 
 knitr::opts_chunk$set(echo = FALSE)
 ```
+
+# Once upon a time... King Markov and Captain Metropolis
 
 ## Once upon a time... King Markov and Captain Metropolis 1/3
 
@@ -142,6 +145,8 @@ renderPlot({
 })
 ```
 
+# Introduction
+
 ## Introduction 1/3
 
 
@@ -167,6 +172,12 @@ A MCMC can be defined as a
 
 > stochastic process where the present state [is dependent from the
   previous state][^1], but past and future states are independent [@Gamerman2006]
+  
+* MCMCs are resilient to local maxima (or minima)
+
+* MCMCs can estimate all posterior distribution forms, even never-seen-before distributions
+
+* Multiple, independent chains
   
 * Assuming independency of the draws:
   * $E[p(\theta|y)]\approx \frac{1}{T} \sum^T_{t=1} p(\theta_t|y)$
@@ -234,6 +245,8 @@ Over a long sequence:
 1. Metropolis-Hasting algorithm
 2. Gibbs' Sampling
 3. Hamiltonian Markov Chains
+
+# Metropolis-Hastings algorithm
 
 ## Metropolis-Hastings algorithm
 
@@ -593,6 +606,7 @@ sidebarPanel(
 )
 ```  
   
+# Gibbs' sampling
 
 ## Gibbs' sampling
 
@@ -616,14 +630,54 @@ sidebarPanel(
 We want to estimate the joint posterior distribution for
 $\mathcal{N}(\mu,\sigma)$.
 
-| t for $\mu$ | t for $\sigma$ | $\mu$                                    | $\sigma$                                    |
-|-------------|----------------|------------------------------------------|---------------------------------------------|
-| 0           | 0              | 0                                        | 1                                           |
-| 1           | 0              | $\mu^{t=1} \sim p(\mu\|\sigma^{t=0}$ = 5 | 1                                           |
-| 1           | 1              | 5                                        | $\sigma^{t=1} \sim p(\sigma\|\mu^{t=1}$ = 2 |
-| 2           | 1              | $\mu^{t=2} \sim p(\mu\|\sigma^{t=1}$ = 7 | 2                                           |
-| 2           | 2              | 7                                        | $\sigma^{t=2} \sim p(\sigma\|\mu^{t=2}$ = 4 |
-| ...         | ...            | ...                                      | ...                                         |
+<table  class="tg">
+<thead>
+<tr>
+<th>t for $\mu$</th>
+<th>t for $\sigma$</th>
+<th>$\mu$</th>
+<th>$\sigma$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>$\mu^{t=1} \sim p(\mu\rvert\sigma^{t=0})$ = 5</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>5</td>
+<td>$\sigma^{t=1} \sim p(\sigma\rvert\mu^{t=1})$ = 2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>$\mu^{t=2} \sim p(\mu\rvert\sigma^{t=1})$ = 7</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>7</td>
+<td>$\sigma^{t=2} \sim p(\sigma\rvert\mu^{t=2})$ = 4</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
 
 ## Gibbs' sampling Example 2/3
 
@@ -715,5 +769,95 @@ sidebarPanel(
 )
 ```  
 
+# Hamiltonian Markov Chains
+
+## Hamiltonian Markov Chains
+
+Both Metropolis-Hastings and Gibbs' MCMCs are _random walk_ algorithms
+
+> Random walk algorithms: stochastic processes, consisting in random steps, used to describe a pattern
+
+* The Hamiltonian MC (also called hybrid Markov Chain) tries to limit the random walk behaviour of Metropolis' MCMC by means of a deterministic simulation methods [@gelman2013bayesian] 
+
+1. for each
+  parameter ($\theta_1, \theta_2, \dots, \theta_n$) we estimate a $P(\theta_j|D)$ and an independent $P(\phi_j)$.
+2. $P(\theta_j,\phi_j|D) = P(\theta_j|D) \cdot P(\phi_j)$
+3. $P(\phi)$ usually comes from a multinormal distribution $P(\phi) \sim Multi\mathcal{N}(0, M)$
+4. Each iteration is:
+  * Updating $\phi$ with a random draw from its posterior distribution
+  * Simultanously update $\theta$ and $\phi$ in $L$ ~leapfrog~ steps where the log-density of $\theta$ is used to update $\phi$, and the log-density of $\phi$ is used to update $\theta$. The final values will be $\theta^*$ and $\phi^*$
+  *
+$$
+\theta^t = \begin{cases}
+    \theta^* & \text{with probability} \min \Big(1, \frac{p(\theta^*|D)p(\phi^*)}{p(\theta^{t-1}|D)p(\phi^{t-1})} \Big) \\
+    \theta^{t-1} & \text{otherwise.}
+\end{cases}
+$$
+
+# Diagnostics
+
+## The scale-reduction factor $\hat{R}$, or diagnostics of Gelman and Rubin [@Gelman1992] 
+
+Each one of the $m$ chains is composed by $n$ iterative draws of the $\theta$ parameters.
+
+* There is a _Between-sequences_ variance: the variance of single chain over the mean of all chains, for each $\theta$ parameter $B = \frac{n}{m+1}\sum^n_{j=1}(\overline{\theta}_{\cdot j} - \overline{\theta}_{\cdot \cdot})^2$
+* _Within-sequences_ variance: the mean of the variances for each $\theta$ for each chain: $W = \frac{1}{m}\sum^m_{j=1}s^2_j$, where $s^2_j = \frac{1}{n-1}\sum^n_{i=1}(\theta_{ij}-\overline{\theta}_{\cdot j})^2$
+
+* $\hat{R} = \sqrt{\frac{\frac{n-1}{n}W + \frac{1}{n}B}{W}}$
+
+* When $\hat{R} \leq 1.1$ we consider the chains as convergent
+
+
+```{r, fig.width=4, fig.height=3}
+x <- example_mcmc_draws(chains = 4, params = 1)
+
+# trace plots of the betas
+color_scheme_set("viridis")
+mcmc_trace(x, regex_pars = "alpha")
+```
+
+## Posterior Predictive Checking 
+
+Un altro aspetto di estrema importanza è: ma la mia distribuzione a posteriori
+rappresenta i dati?
+
+- Per questo si utilizzano i Posterior Predictive Checking.
+
+- Si tratta di campionare dal modello Bayesiano ottenuto nuovi valori, che 
+  vengono confrontati graficamente o statisticamente con i dati osservati.
+  
+```{r, fig.width=4, fig.height=3}
+color_scheme_set("brightblue")
+y <- example_y_data()
+yrep <- example_yrep_draws()
+ppc_dens_overlay(y, yrep[1:25, ])
+```
+
+- Posterior Predictive P-value [@Gelman2013] $ppp \sim 0.5$
+
+## Effective Sample Size (ESS)
+
+**Non centra nulla con il sample size dello studio**
+
+- E' il numero di iterazioni indipendenti da autocorrelazione nelle MCMC
+- Importantissimo per l'approccio _a là_ [@Kruschke2014]
+- [@Kruschke2014] indica ESS $\geq 10000$
+- Su alcuni software è chiamato `n_eff`
+
+## Pareto-k-diagnostic
+
+E' un indice complesso, indica se il teorema del limite centrale tiene nella
+distribuzioni a posteriori.
+
+- Se $k < 0.5$, tutto ok
+- Se $0.5 \leq k < 0.7$ qualche problema c'è, ma tutto sommato tiene
+- Altrimenti possono esserci problemi.
+
+## Sensitivity analysis
+
+Soprattutto nel caso dell'uso di Bayes Factor.
+
+- Richiesta di provare con priori diversi, solitamente con varianza più
+  ampia, per vedere se il risultato qualitativamente regge.
 
 ## References and footnotes
