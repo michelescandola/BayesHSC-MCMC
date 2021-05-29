@@ -6,7 +6,7 @@ font-family: 'Serif'
 output:
   slidy_presentation:
     incremental: yes
-    footer: "M. Scandola - $2^{nd}$ BayesHSC Summer School 2021 - https://michelescandola.shinyapps.io/2021_-_sipf_webinar_bayesian/"
+    footer: "M. Scandola - $2^{nd}$ BayesHSC Summer School 2021 - https://michelescandola.shinyapps.io/mcmc/"
 css: mystyle.css
 bibliography: biblio.bib
 runtime: shiny
@@ -23,6 +23,7 @@ library(knitr)
 library(ggplot2)
 library(MASS)
 library(bayesplot)
+library(fontawesome)
 
 knitr::opts_chunk$set(echo = FALSE)
 ```
@@ -1023,8 +1024,20 @@ estimate of the fitted model multiplied by $-2$ ($-2 \log p(y|\hat{\theta})$)
 
 </div>
 
-## References and footnotes
+## Github and ShinyApp
 
 <div class = "box">
 
+`r fa(name = "github")` GitHub: https://github.com/michelescandola/BayesHSC-MCMC
+
+
+`r fa(name = "play")` ShinyApp: https://michelescandola.shinyapps.io/mcmc/
+
 </div>
+
+
+
+
+## References and footnotes
+
+
