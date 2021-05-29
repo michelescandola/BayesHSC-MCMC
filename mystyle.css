@@ -1,7 +1,9 @@
 .box {
     color: black; background: #E8E8E8;
-    position: fixed;
-    width: 25%;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+    height: 80%;
 }
 
 body {
@@ -27,7 +29,7 @@ slides > slide {
 
 blockquote p {
     padding: 15px;
-    background: #eee;
+    background: #A2CD5A;
     border-radius: 5px;
     color: #000000;
 }
@@ -39,6 +41,7 @@ blockquote p::before {
 blockquote p::after {
     content: '\201D';
 }
+
 .shiny-input-container {
-  color: #474747;
+  color: #FF8C00;
 }

@@ -31,6 +31,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Once upon a time... King Markov and Captain Metropolis 1/3
 
+<div class = "box">
 <center>
 ![](drunkking.jpg)
 </center>
@@ -42,8 +43,11 @@ King Markov is king of a chain of 5 islands.
 * The law declares that the king must harbor at each island in
   proportion to the population of the island.
   
+</div>
+  
 ## Once upon a time... King Markov and Captain Metropolis 2/3
 
+<div class = "box">
 <center>
 ![](island.jpg)
 </center>
@@ -53,9 +57,12 @@ but King Markov does not:
 
 1. want to keep recording of the population of each island
 2. he doesn't want to know each night where he will be the next night
+</div>
+
 
 ## Once upon a time... King Markov and Captain Metropolis 3/3
 
+<div class = "box">
 <center>
 <img src="coin.jpg" alt="drawing" width="300"/>
 </center>
@@ -71,7 +78,7 @@ Metropolis, the captain of the boat, in order to choose the next island
   * If the proposal island has fewer people,
     he flips a coin, and if it is "tail" they stay, if it is "head" they move
     to the last island
-
+</div>
     
 ## Once upon a time... King Markov and Captain Metropolis
 
@@ -149,7 +156,7 @@ renderPlot({
 
 ## Introduction 1/3
 
-
+<div class = "box">
 * Bayesian Statistics predates NHST statistics about 150 years
   * Why we stopped using it?
   
@@ -159,9 +166,12 @@ renderPlot({
   * $P(\Theta_i|D) \propto P(\Theta_i) \int_{\Theta_i} \mathcal{L}_n(\theta|D) dQ_i(\theta)$
   * The computation of the _Marginal Likelihood Integral_ is difficult.
   * Too difficult for complex models.
+  
+</div>
     
 ## Introduction 2/3
 
+<div class = "box">
 * Why we started again?
   * Approximate methods of inference (normal and Laplace approximations,
     quadrature approximations).
@@ -185,9 +195,14 @@ A MCMC can be defined as a
 * However, in Bayesian Statistics samples do not need to be drawn independently
   [@kaplan2014bayesian]
   
+</div>
+  
 [^1]: Author's presentation addition
   
 ## Introduction 3/3
+
+
+<div class = "box">
 
 > MCMC draws values of $\theta$ from approximate distributions, and correct them
   to better approximate the target posterior distribution $P(\Theta|D)$ [@gelman2013bayesian].
@@ -201,9 +216,12 @@ A MCMC can be defined as a
 4. If it is not, in order to avoid *local minima (or maxima)*, an additional
   rule is applied to see if the new sample is accepted or not.
   
-
+</div>
 
 ## Monte Carlo methods
+
+
+<div class = "box">
 
 * They are non-parametrical statistical tests,
   for the first time used by Enrico Fermi in
@@ -214,17 +232,25 @@ A MCMC can be defined as a
   2. Randomly generate the data from a Probability Density Function.
   3. Apply an algorithm to the data.
   4. Aggregate the results.
+  
+</div>
 
 
 ## Markov Chains
+
+
+<div class = "box">
 
 * A Markov Chain is a random process, namely a function that creates random variables.
 * It undergoes transitions from one state to another within
   a limited range of possible states.
 * It is _memorless_: the next state only depends from the current one.
-
+</div>
 
 ## Stationary distribution of a MCMC
+
+
+<div class = "box">
 
 Each $\theta_t$ is only dependent to $\theta_{t-1}$
 
@@ -240,15 +266,26 @@ Over a long sequence:
   * $m$ = total number of _burn-in_ iterations,
   * $p(\theta_i|y)$ the posterior distribution sampled at the $i^{th}$ iteration
   
+</div>
+  
 ## The most used typologies of MCMCs
+
+
+<div class = "box">
 
 1. Metropolis-Hasting algorithm
 2. Gibbs' Sampling
 3. Hamiltonian Markov Chains
 
+
+</div>
+
 # Metropolis-Hastings algorithm
 
 ## Metropolis-Hastings algorithm
+
+
+<div class = "box">
 
 1. a _candidate_ value $x$ is sampled from a so-called _proposal_ distribution
   ($q(\cdot|y_t)$)
@@ -262,6 +299,8 @@ Over a long sequence:
   * Otherwise, we will accept $x$ as the new step of the chain with a
     probability that comes from the ratio of
     the probabilities
+    
+</div>
     
 ## Metropolis-Hastings algorithm example 1/6
 
@@ -488,6 +527,9 @@ sidebarPanel(
 
 ## Metropolis-Hastings algorithm example 5/6
 
+
+<div class = "box">
+
 Our posterior distribution to be sampled is the following:
 
 $y \sim \mathcal{N}(\mu, \sigma)$
@@ -502,6 +544,8 @@ with:
 $s^2 = 6$ being the variance of the data
 $\overline{y} = 15$ being the mean of the data
 and we observed 30 data points
+
+</div>
 
 ## Metropolis-Hastings algorithm example 6/6
 
@@ -610,6 +654,9 @@ sidebarPanel(
 
 ## Gibbs' sampling
 
+
+<div class = "box">
+
 1. our goal is to obtain the _joint_ posterior distributions of two or more
   parameters of a model ($P(\theta_1, \theta_2, \dots, \theta_n | D)$).
 2. the algorithm starts with an initial set of parameters
@@ -624,8 +671,13 @@ sidebarPanel(
       $\{\theta_1^{t}, \theta_2^{t}, \dots, \theta_n^{t-1}\}$
   * ...
   
+</div>
+  
   
 ## Gibbs' sampling Example 1/3
+
+
+<div class = "box">
 
 We want to estimate the joint posterior distribution for
 $\mathcal{N}(\mu,\sigma)$.
@@ -679,7 +731,12 @@ $\mathcal{N}(\mu,\sigma)$.
 </tbody>
 </table>
 
+</div>
+
 ## Gibbs' sampling Example 2/3
+
+
+<div class = "box">
 
 Our posterior distribution to be sampled is the following:
 
@@ -695,6 +752,8 @@ with:
 $s^2 = 6$ being the variance of the data
 $\overline{y} = 15$ being the mean of the data
 and we observed 30 data points
+
+</div>
 
 
 ## Gibbs' sampling Example 3/3
@@ -773,6 +832,9 @@ sidebarPanel(
 
 ## Hamiltonian Markov Chains
 
+
+<div class = "box">
+
 Both Metropolis-Hastings and Gibbs' MCMCs are _random walk_ algorithms
 
 > Random walk algorithms: stochastic processes, consisting in random steps, used to describe a pattern
@@ -794,9 +856,14 @@ $$
 \end{cases}
 $$
 
+</div>
+
 # Diagnostics
 
 ## The scale-reduction factor $\hat{R}$, or diagnostics of Gelman and Rubin [@Gelman1992] 
+
+
+<div class = "box">
 
 Each one of the $m$ chains is composed by $n$ iterative draws of the $\theta$ parameters.
 
@@ -808,7 +875,7 @@ Each one of the $m$ chains is composed by $n$ iterative draws of the $\theta$ pa
 * When $\hat{R} \leq 1.1$ we consider the chains as not divergent [@gelman2013bayesian, p. 288]
 
 
-```{r, fig.width=4, fig.height=3}
+```{r, fig.width=12, fig.height=3}
 x <- example_mcmc_draws(chains = 4, params = 1)
 
 # trace plots of the betas
@@ -816,7 +883,12 @@ color_scheme_set("viridis")
 mcmc_trace(x, regex_pars = "alpha")
 ```
 
+</div>
+
 ## Effective Sample Size (ESS) or Effective number of simulation draws ($\hat{n}_{eff}$)
+
+
+<div class = "box">
 
 **It has nothing to do with the Sample Size of a study**
 
@@ -827,8 +899,13 @@ mcmc_trace(x, regex_pars = "alpha")
   $\hat{\rho}_t$ being the autocorrelation estimate and $t$ its lag
 - For [@gelman2013bayesian] $\hat{n}_{eff} \geq 10$, for [@Kruschke2014]
   $\hat{n}_{eff} \geq 10000$
+  
+</div>
 
 ## Posterior Predictive Checking 
+
+
+<div class = "box">
 
 Another extremely important test is the Posterior Predictive Checking, 
 that helps us in understanding whether our model is really plausible given
@@ -844,14 +921,41 @@ our data.
 
 * The Posterior Predictive Checking can also be done using a graphical approach
   
-```{r, fig.width=4, fig.height=3}
+```{r, fig.width=12, fig.height=3}
 color_scheme_set("brightblue")
 y <- example_y_data()
 yrep <- example_yrep_draws()
 ppc_dens_overlay(y, yrep[1:25, ])
 ```
 
+</div>
+
+## Predictive accuracy
+
+
+<div class = "box">
+
+> Predictive Accuracy: the ability of the model build on a dataset $D$, to
+predict a new dataset $D^*$ ( future or out of sample data)
+minimising the error
+
+* How to assess predictive accuracy?
+  1. **within-sample predictive accuracy**: the accuracy of the model in fitting
+    the data used to estimate the model. Generally it is an overestimation of
+    the actual predictive accuracy.
+    log posterior predictive density: `lppd`
+  2. **adjusted within-sample predictive accuracy**: AIC, DIC, WAIC and other
+    criteria adjust lppd to give unbiased estimates. expected lppd: `elppd`
+  3. **cross-validation**: Leave-P-Out and Leave-One-Out Cross Validation,
+    fitting the model on training data and evaluating
+    its predictive accuracy on a validation data set.
+    
+</div>
+
 ## Pareto Smoothed Importance Sampling (PSIS)
+
+
+<div class = "box">
 
 > Importance Sampling is a method used to compute estimations drawing a random
 sample from a distribution that is an easier approximation of
@@ -860,20 +964,26 @@ the target distribution [@gelman2013bayesian; @vehtari2021pareto]
 * it computes _importance ratios_ or _weights_ ($\omega(\theta^S)$), that are
   an index of the
   importance of the MCMC iterations
-* when there are differences within the $\omega(\theta^S)$, their
-  distribution, along a Pareto distribution, will have the shape $k$ parameter
-  greater than $0.7$ [@vehtari2021pareto]
+* the $\omega(\theta^S)$ can be described by a Pareto distribution,
+  characterised by a shape ($k$) parameter [@vehtari2021pareto]
+  
+</div>
 
 ## Leaving-One-Out Cross-Validation and PSIS
 
-By using the Leaving-one-out technique, we might estimate the
-$k$ value from the model, removing one observation each time.
 
-1. if $k < 0.5$ everything is OK
-2. if $0.5 \leq k < 0.7$ we should be cautious
-3. if $k > 0.7$ the importance sampling shows some problems
-4. if $ k > 1$ yhere are several observations which are highly influential,
-  which indicates potential model misspecification
+<div class = "box">
+
+By using the Leaving-one-out technique, we might estimate the
+$k$ values from the $n$ models, removing one observation each time
+($n$ is the number of observations).
+
+* The $k$ parameter of the PSIS of each LOO model will be evaluated:
+  1. if $k < 0.5$ everything is OK
+  2. if $0.5 \leq k < 0.7$ we should be cautious
+  3. if $k > 0.7$ the importance sampling shows some problems
+  4. if $k > 1$ yhere are several observations which are highly influential,
+      which indicates potential model misspecification
 
 * by means of the `loo` package, we will have the percentage of times where
   we obtain these scores
@@ -881,19 +991,40 @@ $k$ value from the model, removing one observation each time.
 * This methodology can also be used to chose the model that better
   _predicts_ the observed data
   
-## Widely Applicable Information Criterion
+</div>
+  
+## Widely Applicable Information Criterion or Watanabe-Akaike Information Criterion (WAIC)
 
-- Calculated from the posterior
-- Point-wise
-- No posterior MV gaussian distribution is assumed
-- Let lppd be the log-pointwise-predictive density
-- Let $p_{WAIC}$ be the effective number of parameters
-- let $V(y_i)$ be the variance in log-likelihood of $y_i$ for each sample from the posterior distribution
+
+<div class = "box">
+
+> Information Criteria: measures of predictive accuracy, typically defined
+based on the _deviance_ (log predictive density of the data given a point
+estimate of the fitted model multiplied by $-2$ ($-2 \log p(y|\hat{\theta})$)
+[@gelman2013bayesian]
+
+* Akaike Information Criterion is reliable when prior distributions are flat,
+  $P(\theta|D) \sim M\mathcal{N}(\mu, \Omega)$ and we have a sample size much
+  greater than the number of parameters [@statrethinkingbook]
+* Deviance Information Criterion is an AIC able to deal with informative priors
+* WAIC:
+  - Calculated from the posterior
+  - Point-wise
+  - No posterior MultiNormal distribution is assumed
+  - Let lppd be the log-pointwise-predictive density
+  - Let $p_{WAIC}$ be the effective number of parameters
+  - let $V(y_i)$ be the variance in log-likelihood of $y_i$ for each sample from the posterior distribution
 
 * $WAIC = -2(lppd - p_{WAIC})$
 
-* lppd =$\sum^N_{i = 1} log Pr(y_i)$
+* lppd = $\sum^N_{i = 1} log P(y_i)$
 
 * $p_{WAIC} = \sum^N_{i = 1} log V(y_i)$
 
+</div>
+
 ## References and footnotes
+
+<div class = "box">
+
+</div>
